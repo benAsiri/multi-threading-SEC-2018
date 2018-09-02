@@ -352,11 +352,14 @@ object then it calls the wait() method and thread 2 goes to suspend state.
   - Use Thread.isInterrupted() method to check the state
   - If There is any interruption exit from the thread by throwing new
     InterruptedExeption().
-8. Some other methods that throw InterruptedException()
-a. Thread.sleep()
-b. Object.wait()
-9. Java.io class don’t throw InterruptedException() this make it tricky to handle interrupts
-in a middle of a reading or writing to a file or sending or receiving data from network.
-10. For this we can use another set of new IO classes called java.nio which will throw
-ClosedByInterruptedException() which is a subclass of IOException
+
+- Some other methods that throw InterruptedException()
+  - Thread.sleep()
+  - Object.wait()
+
+- Java.io class don’t throw InterruptedException() this make it tricky to handle interrupts
+  in a middle of a reading or writing to a file or sending or receiving data from network.
+
+- For this we can use another set of new IO classes called java.nio which will throw
+  ClosedByInterruptedException() which is a subclass of IOException
 
