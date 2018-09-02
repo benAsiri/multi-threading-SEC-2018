@@ -141,6 +141,222 @@ str = str + "world";
 // now str equals "helloworld"
 
 ```
+So what happened there? Since **String** is immutable, clearly **str** was not changed.
+But it now equals something different. This is because **str** is now a completely newly
+instantiated object, just as your **Integer** is. So the value of a did not mutate, but it
+was replaced with a completely new object, i.e. **new Integer(6)**
 
 
+## How to create Thread-Safe Classes.
+
+**Go through the Pacakge ThreadSafety in the project. There are two classes, One main function
+called : ThreadSafetyExample_1 and Counter class .**
+
+- To create thread-safety we need to you synchronized statement.
+
+- Only one thread at a time can execute the contents of this synchronized statement.
+
+- If there are other sync statements that share the same mutext object only one thread-can execute any of them at a time.
+
+- **Mutex** is an object that works as a **mutual exclusion lock**. It is like a single key for a single
+toilet. Only the person with the key can go to the toilet but one at a time can use the
+toilet. You can share the toilet unless you have psychological issue ( which is a joke) :) 
+
+- Mutext really don’t know what the resources actually is but it’s our job to keep track of-
+that.
+
+- In java **synchronized** keyword can be used as a method modifier but it is not always
+good way to do it. Because it will lock the entire method for the duration of the
+resource usage. But you might only need to lock and use the shared object in very little
+part of the code. **Locking for longer than necessary is inefficient, because it will end up
+blocking other threads for longer than necessary.**
+
+- Instead of using a object of Object class we can simply pass the current object by
+passing this keyword but it is not good practice at all. Because, this is effectively public
+and anything else that has a reference to this object can use it as a mutex. If object itself
+using as a mutex internally it might end up in a deadlock situation.
+
+- If you want to lock multiple resources you need to use more than one mutex objects
+and separate or nested synchronized statements.
+
+- Encapsulation between threads classes should done as foolows:
+ - Thread communication is the responsibility of one class
+ - Start one thread and provide much of the code that this tread executes
+ - Have a set of public accessors and mutators intended to be called by a different
+   thread.
+ - Contain the mutex and shared resource as private fields, that will allow these
+   two threads to communicate.
+   
+- The implement and encapsulate works with multiple threads can be made as follows :
+
+```ruby
+public class RunningCounter implements Runnable {
+
+    private Object mutex = new Object();
+    private int resource =0;
+    
+    @Override
+    public void run() {
+                
+        try {
+            
+            while(resource <1000)
+            {
+                    synchronized(mutex)
+                    {
+                         System.out.println(resource);
+                    }
+                      Thread.sleep(1000);
+            }
+          
+        } catch (InterruptedException ex) {
+            Logger.getLogger(RunningCounter.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+        
+    public void increment()
+    {
+        synchronized(mutex)
+        {
+            resource ++;
+        }
+    }   
+}
+
+```
+
+
+## Memory Synchronization
+
+- Synchronized statement does more than locking it also instruct the compiler to
+synchronize the memory in which fields are stored. The fields used with in the blocks.
+
+- Compilers don’t do what you instruct them raster they do something functionally similar
+to what you instruct them,
+
+- Some tricks that done by compiler: re-arrange the order of the instructions, removing
+operations entirely if they have no effect, caching filed values in cpu registers.
+
+- Registers are very faster than the RAM, but field values are officially stored at the RAM.
+When you have operations which frequently read or write the field value, compiler may
+choose to work with the value in the register.
+
+- Using the cache is a valuable thing but there is a problem, that is by default complier
+assumes that there is only one thread using this field.
+
+- Even though without the synchronized keyword if the thread is accessing a field value
+more times its cached.
+
+- To avoid this caching we need to flag the field with volatile keyword. But remember that
+volatile does not stop the race conditions or dead locks.
+
+- To get the idea look at the following code block or refer to the Project Memorysync and
+the **Counter.java class**
+
+```ruby
+
+public class Counter{
+
+  private volatile int i=0;
+  
+  public int get(){
+   return i;
+  }
+
+  public void increament(){
+   i++;
+   //here occours the race condition becuase we are not locking the resource for any threads
+  }
+}
+
+```
+
+
+##Threads Communication : Monitors
+
+- Threads can communicate using a shared resource, but actual communication cost the
+timing. Threads must be able to signal each other, so that one can tell another that
+when the information is actually available.
+
+- Earlier we used to create a Boolean flag to record the status of the resource availability
+and then if the flat is true the other thread can start consuming it. This way we used to
+communicate over two threads. But it is very in efficient and waste CPU time. Because if
+the date looking for one thread is not available that thread need to wait for long time. It
+better instead of simply waiting if it can go to sleep until the data is available.
+
+- For this we use monitors, monitor is a mutex kind of thing. It has for basic operations,
+wait(), notify(), lock(), unlock()
+
+- Scenario A: Related to the Project Thread Communication use class Monitors + Main
+Lets assume that the Thread 2 start first :
+ - Thread 2 start first and then lock the resource (method2) with the monitor
+object then it calls the wait() method and thread 2 goes to suspend state.
+
+
+ - Thread 2 wait for the thread 1 to update the resource (method1)
+ 
+ - Thread 2 still locked the monitor and it will release the lock
+ 
+ - Thread 1 now lock the resource with monitor (if there are more than one
+   threads we don’t know who is going to access it )
+   
+ - Now Thread 1 writes to the resource
+ 
+ - Calling notify() method thread 1 notifies to the waiting thread 2 (if there are
+   many other threads waiting monitor picks one of them and wake)
+   
+ - Now still Thread 1 has locked the monitor object
+ 
+ - Thread 1 releases the lock and the thread 2 again locks the resource with
+   monitor object thread 2 begins execution again.
+   
+ - Finally thread 2 unlocks thee resource
+  
+   - There are number of issues with this method :
+     - If the method1 or the thread 1 runs first then the info is arrived to the
+       resource and it was updated but thread 2 has to wait unnecessarily
+     - If thread 1 updates the resource several times before thread 2 gets to it
+       thread 2 will miss some information.
+
+- Scenario B : Related to the Project Thread Communication use class Monitors2 + Main2
+ - Same as the scenario A but you need to add a Boolean flag to check weather the
+   resource has been updated.
+ - When the thread runs it needs to check the resource has updated if not thread
+   needs to wait() for the other thread to update it and once the update avil thread
+   need to notify() it !
+   
+- So that we can guarantee that the both threads are at a known point in the code and
+  know the state at the same time.
+  
+
+## Interrupting Threads
+*Please go through the source code : StopThrad project*
+
+- Don’t use stop() method to stop a thread use the interrupt() method.
+
+- Stop() will throw ThreadDeath exception inside the thread if it is not caught it will close
+  all currently running methods to end including the task’s main run() method.
+  
+- Its impossible to find where the ThreadDeath exception happens. It could be any where
+  in the code.
+  
+- If ThreadDeath occurred while constructing or mutating an object which other threads
+  are also used that object, that object can fall into unusable state and possibly an invalid
+  state.
+
+- Don’t never try to handle ThreadDeath
+
+- Kindly stop the thread using interrupt() method
+
+- When using interrupt() method there few things to remember :
+  - Use Thread.isInterrupted() method to check the state
+  - If There is any interruption exit from the thread by throwing new
+    InterruptedExeption().
+8. Some other methods that throw InterruptedException()
+a. Thread.sleep()
+b. Object.wait()
+9. Java.io class don’t throw InterruptedException() this make it tricky to handle interrupts
+in a middle of a reading or writing to a file or sending or receiving data from network.
+10. For this we can use another set of new IO classes called java.nio which will throw
+ClosedByInterruptedException() which is a subclass of IOException
 
